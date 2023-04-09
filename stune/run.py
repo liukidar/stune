@@ -95,7 +95,7 @@ def main(
 
         requested_gpus = max(1, gpus_per_task)
 
-        cmd = f"python -m tune.run -e {exec_name} --study {study_name} --storage {storage} --n_jobs 0 "
+        cmd = f"python -m stune.run -e {exec_name} --study {study_name} --storage {storage} --n_jobs 0 "
         if n_mins is not None:
             cmd += f"--n_minutes {n_mins * 60 - 2 * 60} "
         if n_trials is not None:
@@ -150,6 +150,11 @@ def main(
 
 
 if __name__ == "__main__":
+    # Check if necessary folders exist
+    if not os.path.exists(".stune"):
+        os.mkdir(".stune")
+        os.mkdir(".stune/output")
+        os.mkdir(".stune/config")
     parser = argparse.ArgumentParser(description="Slurm parallel hyperparameter optimization via optuna and neptune.")
     parser.add_argument("-e", "--exec", type=str, help="Target executable name (without extension)")
     parser.add_argument("--storage", type=str, help="URL of the storage used to save the study")
