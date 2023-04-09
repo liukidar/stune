@@ -49,7 +49,7 @@ def open_log(
         custom_id = run["sys/custom_run_id"].fetch()
     except:
         custom_id = "<Unknown>"
-    print(f"Run ID: {run._id} / {run._short_id} / {custom_id}")
+    print(f"Run ID: {run._id} / {custom_id}")
     print(f"Logging mode:", mode if mode else "async")
 
     yield run
