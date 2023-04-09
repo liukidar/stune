@@ -34,8 +34,8 @@ def sbatch(
     if env is not None:
         sbatch_cmd += "module load python/anaconda3\n"
         sbatch_cmd += "eval \"$(conda shell.bash hook)\"\n"
-        sbatch_cmd += "conda activate pcax\n"
-    # sbatch_cmd += "export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/:$LD_LIBRARY_PATH\n"
+        sbatch_cmd += f"conda activate {env}\n"
+    sbatch_cmd += "export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/:$LD_LIBRARY_PATH\n"
 
     if tasks_per_node > 1:
         sbatch_cmd += "srun --ntasks $SLURM_NTASKS "
@@ -45,7 +45,7 @@ def sbatch(
     sbatch_cmd += cmd + "\n"
 
     sbatch_filename = f"__sbatch_{job_name}.sh"
-    with open(sbatch_filename, "w") as f:
+    with open(".stune/" + sbatch_filename, "w") as f:
         f.write(sbatch_cmd)
 
     os.system(f"chmod +x .stune/{sbatch_filename}; sbatch --array=1-{n_jobs} {'--wait' if wait else ''} .stune/{sbatch_filename}")
