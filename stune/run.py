@@ -4,6 +4,7 @@ import importlib
 from datetime import datetime
 import argparse
 import functools
+import json
 
 import optuna
 import optuna.visualization
@@ -57,6 +58,11 @@ def main(
     partition: str = "devel",
     description: Optional[str] = None
 ):
+    if n_jobs == 0:
+        import time
+        import random
+        
+        time.sleep(random.random() * 8)
     exec_config_name = f".stune/config/{exec_name}_{study_name}.cfg"
     exec_config = OmegaConf.load(exec_config_name)
 
@@ -65,13 +71,12 @@ def main(
         storage=storage,
         load_if_exists=True,
         directions=exec_config.directions.values(),
-        # sampler=optuna.samplers.RandomSampler()
+        sampler=optuna.samplers.RandomSampler()
     )
     
     exec = importlib.import_module(exec_name, )
 
     if n_jobs == 0:
-
         log_mode = None
         if log is True:
             log_mode = "debug" if debug is True else "offline"
@@ -150,11 +155,16 @@ def main(
 
 
 if __name__ == "__main__":
-    # Check if necessary folders exist
-    if not os.path.exists(".stune"):
-        os.mkdir(".stune")
-        os.mkdir(".stune/output")
-        os.mkdir(".stune/config")
+    try:
+        with open(".stune/config.json", "r") as f:
+            env = json.load(f)
+            for key, value in env.items():
+                os.environ[key] = value
+    except FileNotFoundError:
+        print("stune hasn't been configured. Run 'python -m stune.config'.")
+
+        exit(1)
+
     parser = argparse.ArgumentParser(description="Slurm parallel hyperparameter optimization via optuna and neptune.")
     parser.add_argument("-e", "--exec", type=str, help="Target executable name (without extension)")
     parser.add_argument("--storage", type=str, help="URL of the storage used to save the study")
@@ -200,7 +210,7 @@ if __name__ == "__main__":
             print("You are deleting the following studies:")
             for study_i in studies_to_delete:
                 print(study_i, studies_info[study_i][0])
-            c = input("Continue? [y/n]")
+            c = input("Continue? [y/n] ")
             if c == "y":
                 for study_i in studies_to_delete:
                     optuna.delete_study(study_name=studies_info[study_i][0], storage=storage)
