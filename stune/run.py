@@ -52,17 +52,13 @@ def main(
     storage: str,
     n_trials: int,
     n_mins: Optional[int] = None,
+    sampler: str = "random",
     debug: bool = False,
     log: bool = False,
     n_jobs: int = 0,
     partition: str = "devel",
     description: Optional[str] = None
 ):
-    if n_jobs == 0:
-        import time
-        import random
-        
-        time.sleep(random.random() * 8)
     exec_config_name = f".stune/config/{exec_name}_{study_name}.cfg"
     exec_config = OmegaConf.load(exec_config_name)
 
@@ -71,7 +67,7 @@ def main(
         storage=storage,
         load_if_exists=True,
         directions=exec_config.directions.values(),
-        sampler=optuna.samplers.RandomSampler()
+        sampler=optuna.samplers.RandomSampler() if sampler == "random" else None
     )
     
     exec = importlib.import_module(exec_name, )
@@ -171,6 +167,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--study", type=str, help="Name of the study to create (or load if it already exists)")
     parser.add_argument("-t", "--n_trials", type=int, help="Number of trials to run the optimization for (exclusive with n_minutes)")
     parser.add_argument("-m", "--n_minutes", type=int, help="Number of minutes to run the optimization for (exclusive with n_trials)")
+    parser.add_argument("--tpe", action="store_true", help="Whether to use tpe or random sampler")
     parser.add_argument("-d", "--debug", action="store_true", help="Whether to run the optimization in debug mode")
     parser.add_argument("-l", "--log", action="store_true", help="Whether to enable logging for each individual trial")
     parser.add_argument("--msg", type=str, help="Study description")
@@ -218,8 +215,8 @@ if __name__ == "__main__":
         # Compute study_name
         study_name = args.study or generate_name()
 
-        # Create config file
-        if args.study is None:
+        # Create config file if it is not worker
+        if args.n_jobs != 0:
             exec_config_name = f".stune/config/{args.exec}_{study_name}.cfg"
 
             # Load exec configuration, including tuning and default tuning files.
@@ -239,6 +236,7 @@ if __name__ == "__main__":
             storage=storage,
             n_trials=args.n_trials,
             n_mins=args.n_minutes,
+            sampler="random" if args.tpe is not True else None,
             debug=args.debug,
             log=args.log,
             n_jobs=args.n_jobs,
