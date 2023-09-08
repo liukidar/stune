@@ -17,21 +17,21 @@ def get_storage(args, env):
     return storage
 
 
-def action_ls(storage):
+def action_ls(storage, exec_name):
     studies = optuna.get_all_study_summaries(storage, False)
     studies_info = [(study.study_name, study.datetime_start) 
-                    for study in studies if args.exec is None or study.study_name.startswith(args.exec)]
+                    for study in studies if exec_name is None or study.study_name.startswith(exec_name)]
 
     for i, (name, starttime) in enumerate(studies_info):
                 print(f"{i}.\t", name.ljust(64), starttime)
 
 
-def action_rm(storage):
+def action_rm(storage, exec_name):
     from intspan import intspan
 
     studies = optuna.get_all_study_summaries(storage, False)
     studies_info = [(study.study_name, study.datetime_start) 
-                    for study in studies if args.exec is None or study.study_name.startswith(args.exec)]
+                    for study in studies if exec_name is None or study.study_name.startswith(exec_name)]
 
     studies_to_delete = intspan(args.rm)
     print("You are deleting the following studies:")
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     # Parse cmd line arguments
     parser = argparse.ArgumentParser(description="Slurm parallel hyperparameter optimization via optuna and neptune.")
-    parser.add_argument("exec", nargs=1, type=str, help="Target python executable")
+    parser.add_argument("exec", nargs="?", type=str, help="Target python executable")
     parser.add_argument("--storage", type=str, help="URL of the storage used to save the study")
     parser.add_argument("-s", "--study", type=str, help="Name of the study to create (or load if it already exists)")
     parser.add_argument("-t", "--n_trials", type=int, help="Number of trials to run the optimization for (exclusive with n_minutes)")
@@ -79,14 +79,14 @@ if __name__ == "__main__":
     parser.add_argument("--rm", type=str, help="List of studies to delete")
 
     args = parser.parse_args()
-    args.exec = args.exec[0].replace(".py", "")
+    args.exec = args.exec[0].replace(".py", "") if args.exec else None
 
     storage = get_storage(args, env)
 
     if args.ls:
-        action_ls(storage)
+        action_ls(storage, args.exec)
     elif args.rm:
-        action_rm(storage)
+        action_rm(storage, args.exec)
     else:
         # Compute study_name
         study_name = args.study or generate_name()
