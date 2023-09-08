@@ -9,10 +9,10 @@ from omegaconf import OmegaConf
 from .tune import run, WORKER_ID
 
 
-def get_storage(args):
-    storage = args.storage
+def get_storage(args, env):
+    storage = args.storage if args.storage else None
     if args.debug is False and storage is None:
-        storage = f"postgresql://{os.environ['PSQL_USR']}:{os.environ['PSQL_PWD']}@{os.environ['PSQL_HOST']}"
+        storage = f"postgresql://{env['PSQL_USR']}:{env['PSQL_PWD']}@{env['PSQL_HOST']}"
 
     return storage
 
@@ -47,8 +47,6 @@ if __name__ == "__main__":
     try:
         with open(".stune/config.json", "r") as f:
             env = json.load(f)
-            for key, value in env.items():
-                os.environ[key] = value
     except FileNotFoundError:
         print("stune hasn't been configured. Run 'python -m stune.config'.")
 
@@ -83,11 +81,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.exec = args.exec[0].replace(".py", "")
 
-    storage = get_storage(args)
+    storage = get_storage(args, env)
 
-    if args.ls is not None:
+    if args.ls:
         action_ls(storage)
-    elif args.rm is not None:
+    elif args.rm:
         action_rm(storage)
     else:
         # Compute study_name
@@ -123,21 +121,23 @@ if __name__ == "__main__":
             )
             OmegaConf.save(config, config_name)
 
-        run(
-            exec_name=args.exec,
-            config_name=config_name,
-            study_name=study_name,
-            storage=storage,
-            n_trials=args.n_trials,
-            n_mins=args.n_minutes,
-            sampler=args.sampler,
-            debug=args.debug,
-            log_level=args.log,
-            n_jobs=args.n_jobs,
-            partition=args.partition,
-            description=args.msg
-        )
-
-        if args.n_jobs != -1 and args.debug is True:
-            os.remove(config_name)
+        try:
+            run(
+                env,
+                exec_name=args.exec,
+                config_name=config_name,
+                study_name=study_name,
+                storage=storage,
+                n_trials=args.n_trials,
+                n_mins=args.n_minutes,
+                sampler=args.sampler,
+                debug=args.debug,
+                log_level=args.log,
+                n_jobs=args.n_jobs,
+                partition=args.partition,
+                description=args.msg
+            )
+        finally:
+            if args.n_jobs != WORKER_ID and args.debug is True:
+                os.remove(config_name)
 
