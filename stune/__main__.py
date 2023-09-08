@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("--rm", type=str, help="List of studies to delete")
 
     args = parser.parse_args()
-    args.exec = args.exec[0].replace(".py", "") if args.exec else None
+    args.exec = args.exec.replace(".py", "") if args.exec else None
 
     storage = get_storage(args, env)
 
@@ -102,6 +102,7 @@ if __name__ == "__main__":
             try:
                 exec_config = OmegaConf.load(args.exec + ".yaml")
             except FileNotFoundError:
+                print(f"[WARNING] File {args.exec}.yaml could not be found")
                 exec_config = OmegaConf.create()
 
             # Load tune configuration
