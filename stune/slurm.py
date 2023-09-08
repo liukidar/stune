@@ -13,7 +13,7 @@ def sbatch(
     partition: str = "devel",
     output: Optional[str] = ".stune/output/%j-%x.out",
     env: Optional[str] = "base",
-    cuda: bool = False,
+    ld_library_path: str = "",
     wait: bool = False
 ):
     sbatch_cmd = "#!/bin/bash -l\n"
@@ -32,10 +32,10 @@ def sbatch(
 
     # Activate conda
     if env is not None:
-        sbatch_cmd += "module load python/anaconda3\n"
+        sbatch_cmd += "module load python/anaconda3 &>/dev/null\n"
         sbatch_cmd += "eval \"$(conda shell.bash hook)\"\n"
         sbatch_cmd += f"conda activate {env}\n"
-    sbatch_cmd += "export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/:$LD_LIBRARY_PATH\n"
+    sbatch_cmd += f"export LD_LIBRARY_PATH=\"{ld_library_path}\"\n"
 
     if tasks_per_node > 1:
         sbatch_cmd += "srun --ntasks $SLURM_NTASKS "
