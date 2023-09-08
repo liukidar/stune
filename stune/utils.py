@@ -17,12 +17,12 @@ class RunInfo:
         self.log = log or {}
         self.trial = trial
         
-        OmegaConf.register_new_resolver("py", lambda code: eval(code), replace=True)
+        OmegaConf.register_new_resolver("py", lambda code: eval(code.strip()), replace=True)
         OmegaConf.register_new_resolver("hp", lambda param: self[f"hp/{param}"], replace=True)
 
     def __getitem__(self, i: Any) -> Any:
-        if "hp/" + i in self.log:
-            return self.log["hp/" + i]
+        if i in self.log:
+            return self.log[i]
 
         path = i.split("/")
         param = self.params
@@ -31,9 +31,8 @@ class RunInfo:
 
         if isinstance(param, omegaconf.DictConfig):
             param = self._sample_param(i, param, self.trial)
-            self.log["hp/" + i] = param
         
-        self.log["hp/" + i] = param
+        self.log[i] = param
 
         return param
 
@@ -44,7 +43,7 @@ class RunInfo:
             param = param[key]
         param[path[-1]] = v
 
-        self.log['hp/' + i] = v      
+        self.log[i] = v      
 
     def is_log(self):
         return self.log is not None
@@ -59,7 +58,9 @@ class RunInfo:
         sample_type = param.get("sample_type", None)
 
         if sample_type is not None:
-            if sample_type == "categorical":
+            if sample_type == "single_value":
+                param = param["sample_space"]
+            elif sample_type == "categorical":
                 param = trial.suggest_categorical(key, param["sample_space"])
             elif sample_type == "float":
                 param = trial.suggest_float(key, *param["sample_space"])
