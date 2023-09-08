@@ -45,10 +45,11 @@ def objective(
 
 
 def run(
+    env,
     exec_name: str,
     config_name: str,
     study_name: str,
-    storage: str,
+    storage: Optional[str],
     n_trials: int,
     n_mins: Optional[int] = None,
     sampler: Optional[str] = "random",
@@ -63,7 +64,7 @@ def run(
     samplers = {
         None: lambda: None,
         "random": optuna.samplers.RandomSampler,
-        "grid": optuna.samplers.GridSampler
+        "grid": optuna.samplers.BruteForceSampler
     }
 
     study = optuna.create_study(
@@ -74,10 +75,10 @@ def run(
         sampler=samplers[sampler]()
     )
 
-    exec = importlib.import_module(exec_name)
-
     # Worker
     if n_jobs < 1:
+        exec = importlib.import_module(exec_name)
+        
         if log_level in ["trial", "all"]:
             log_mode = "debug" if debug is True else "offline"
         else:
@@ -103,14 +104,17 @@ def run(
 
         requested_gpus = max(1, gpus_per_task)
 
-        cmd = f"python -m stune {exec} --study {study_name} --storage {storage} --n_jobs {WORKER_ID} "
+        cmd = (f"python -m stune {exec_name}"
+               f" --study={study_name}"
+               f" --storage={storage if storage is not None else ''}"
+               f" --n_jobs='{WORKER_ID}'")
         if n_mins is not None:
-            cmd += f"--n_minutes {n_mins * 60 - 2 * 60} "
+            cmd += f" --n_minutes={n_mins * 60 - 2 * 60} "
         if n_trials is not None:
-            cmd += f"--n_trials {n_trials}"
+            cmd += f" --n_trials={n_trials}"
 
         if debug is True:
-            cmd += "--debug " 
+            cmd += " --debug" 
 
         if n_mins is not None or n_trials is not None:
             if n_mins is None:
@@ -127,14 +131,14 @@ def run(
                 gpus=requested_gpus,
                 partition=partition if debug is False else 'devel',
                 env="pcax",
-                cuda=True,
+                ld_library_path=env["LD_LIBRARY_PATH"],
                 wait=True
             )
 
         if log_level in ["study", "all"] and debug is not True:
             with open_log(
                 os.path.basename(os.path.dirname(os.path.realpath(exec.__file__))).lower(),
-                exec,
+                exec_name,
                 description=description,
                 mode="async",
                 sweep_id=f"{exec_name}_{study_name}",
