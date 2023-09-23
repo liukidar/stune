@@ -7,13 +7,13 @@ from omegaconf import OmegaConf
 
 class RunInfo:
     def __init__(self,
-        name: str,
-        params: OmegaConf,
+        study_name: str,
+        config: OmegaConf,
         log = None,
         trial = None
     ) -> None:
-        self.name = name
-        self.params = params
+        self.study_name = study_name
+        self.config = config
         self.log = log or {}
         self.trial = trial
         
@@ -25,7 +25,7 @@ class RunInfo:
             return self.log[i]
 
         path = i.split("/")
-        param = self.params
+        param = self.config
         for key in path:
             param = param[key]
 
@@ -38,7 +38,7 @@ class RunInfo:
 
     def __setitem__(self, i: Any, v: Any) -> None:
         path = i.split("/")
-        param = self.params
+        param = self.config
         for key in path[:-1]:
             param = param[key]
         param[path[-1]] = v
@@ -48,8 +48,9 @@ class RunInfo:
     def is_log(self):
         return self.log is not None
 
-    def is_master(self):
-        return self.trial is None
+    @property
+    def trial_id(self):
+        return self.trial.number if self.trial is not None else None
     
     def _sample_param(self, key, param, trial):
         if trial is None:
@@ -67,5 +68,9 @@ class RunInfo:
             elif sample_type == "range":
                 param = trial.suggest_categorical(key,
                                                   tuple(range(param["sample_space"][0], param["sample_space"][1] + 1)))
+            else:
+                raise NotImplementedError(f"sample_type {sample_type} is not supported")
+        else:
+            return NotImplementedError("At the moment it is not possible to return dictionaries when querying parameters.")
         
         return param
