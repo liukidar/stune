@@ -16,6 +16,7 @@ class RunInfo:
         self.config = config
         self.log = log or {}
         self.trial = trial
+        self.locked = False
         
         OmegaConf.register_new_resolver("py", lambda code: eval(code.strip()), replace=True)
         OmegaConf.register_new_resolver("hp", lambda param: self[f"hp/{param}"], replace=True)
@@ -23,6 +24,9 @@ class RunInfo:
     def __getitem__(self, i: Any) -> Any:
         if i in self.log:
             return self.log[i]
+        
+        if self.locked is True:
+            raise PermissionError("Cannot access new parameter from a locked RunInfo")
 
         path = i.split("/")
         param = self.config
@@ -37,16 +41,19 @@ class RunInfo:
         return param
 
     def __setitem__(self, i: Any, v: Any) -> None:
+        if self.locked is True:
+            raise PermissionError("Cannot modify parameter in a locked RunInfo")
+
         path = i.split("/")
         param = self.config
         for key in path[:-1]:
             param = param[key]
         param[path[-1]] = v
 
-        self.log[i] = v      
-
-    def is_log(self):
-        return self.log is not None
+        self.log[i] = v
+    
+    def lock(self):
+        self.locked = True
 
     @property
     def trial_id(self):
