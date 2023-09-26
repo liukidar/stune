@@ -105,11 +105,12 @@ if __name__ == "__main__":
                 print(f"[WARNING] File {args.exec}.yaml could not be found")
                 exec_config = OmegaConf.create()
 
-            # Load tune configuration
-            try:
-                tune_config = OmegaConf.load(args.exec + ".tune.yaml")
-            except FileNotFoundError:
-                tune_config = OmegaConf.create()
+            # Load study configuration
+            if args.study:
+                try:
+                    study_config = OmegaConf.load(args.study + ".yaml")
+                except FileNotFoundError:
+                    study_config = OmegaConf.create()
 
             # Load manual configuration
             manual_config = OmegaConf.load(args.config.replace(".yaml", "") + ".yaml") \
@@ -117,7 +118,7 @@ if __name__ == "__main__":
 
             config = OmegaConf.unsafe_merge(
                 exec_config,
-                tune_config,
+                study_config,
                 manual_config
             )
             OmegaConf.save(config, config_name)
