@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional, List
 import re
 
 import omegaconf
@@ -52,7 +52,11 @@ class RunInfo:
 
         self.log[i] = v
     
-    def lock(self):
+    def lock(self, to_load: List[str] = []):
+        # Load required elements before locking
+        for p in to_load:
+            self.__getitem__(p)
+
         self.locked = True
 
     @property
