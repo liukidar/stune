@@ -130,7 +130,7 @@ def run(
                 job_name=f"{exec_name}_{study_name}", 
                 gpus=requested_gpus,
                 partition=partition if debug is False else 'devel',
-                env="pcax",
+                env=env["CONDA_ENV"],
                 ld_library_path=env["LD_LIBRARY_PATH"],
                 wait=True
             )

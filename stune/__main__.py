@@ -48,6 +48,9 @@ if __name__ == "__main__":
     try:
         with open(".stune/config.json", "r") as f:
             env = json.load(f)
+
+            # Add current conda env if any is active
+            env["CONDA_ENV"] = os.environ.get("CONDA_DEFAULT_ENV", None)
     except FileNotFoundError:
         print("stune hasn't been configured. Run 'python -m stune.config'.")
 
