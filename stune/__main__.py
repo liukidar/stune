@@ -7,6 +7,7 @@ from names_generator import generate_name
 from omegaconf import OmegaConf
 
 from .tune import run, WORKER_ID
+from .utils import load_config
 
 
 def get_storage(args, env):
@@ -98,29 +99,7 @@ if __name__ == "__main__":
         # Create config file if it is not worker
         config_name = f".stune/config/{args.exec}_{study_name}.cfg"
         if args.n_jobs != WORKER_ID:
-            # Load exec configuration
-            try:
-                exec_config = OmegaConf.load(args.exec + ".yaml")
-            except FileNotFoundError:
-                print(f"[WARNING] File {args.exec}.yaml could not be found")
-                exec_config = OmegaConf.create()
-
-            # Load study configuration
-            if args.study:
-                try:
-                    study_config = OmegaConf.load(args.study + ".yaml")
-                except FileNotFoundError:
-                    study_config = OmegaConf.create()
-
-            # Load manual configuration
-            manual_config = OmegaConf.load(args.config.replace(".yaml", "") + ".yaml") \
-                            if args.config else OmegaConf.create()
-
-            config = OmegaConf.unsafe_merge(
-                exec_config,
-                study_config,
-                manual_config
-            )
+            config = load_config(args.execm, args.study, args.config)
             OmegaConf.save(config, config_name)
 
         try:

@@ -5,17 +5,52 @@ import omegaconf
 from omegaconf import OmegaConf
 
 
+def load_config(
+        exec: str,
+        study: Optional[str] = None,
+        config: Optional[str] = None
+    ):
+    # Load exec configuration
+    try:
+        exec_config = OmegaConf.load(exec + ".yaml")
+    except FileNotFoundError:
+        exec_config = OmegaConf.create()
+
+    # Load study configuration
+    if study:
+        try:
+            study_config = OmegaConf.load(study + ".yaml")
+        except FileNotFoundError:
+            study_config = OmegaConf.create()
+    else:
+        study = study_config = OmegaConf.create()
+
+    # Load manual configuration
+    if config:
+        manual_config = OmegaConf.load(config.replace(".yaml", "") + ".yaml")
+    else:
+        manual_config = OmegaConf.create()
+
+    config = OmegaConf.unsafe_merge(
+        exec_config,
+        study_config,
+        manual_config
+    )
+
+    return config
+
+
 class RunInfo:
     def __init__(self,
-        study_name: str,
         config: OmegaConf,
-        log = None,
-        trial = None
+        study_name: str = None,
+        trial = None,
+        log = None
     ) -> None:
-        self.study_name = study_name
         self.config = config
-        self.log = log or {}
+        self.study_name = study_name
         self.trial = trial
+        self.log = log or {}
         self.locked = False
         
         OmegaConf.register_new_resolver("py", lambda code: eval(code.strip()), replace=True)
