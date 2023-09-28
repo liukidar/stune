@@ -1,21 +1,14 @@
 import json
 import os
 import argparse
+from pathlib import Path
 
 import optuna
 from names_generator import generate_name
 from omegaconf import OmegaConf
 
 from .tune import run, WORKER_ID
-from .utils import load_config
-
-
-def get_storage(args, env):
-    storage = args.storage if args.storage else None
-    if args.debug is False and storage is None:
-        storage = f"postgresql://{env['PSQL_USR']}:{env['PSQL_PWD']}@{env['PSQL_HOST']}"
-
-    return storage
+from .utils import get_storage, load_config
 
 
 def action_ls(storage, exec_name):
@@ -92,23 +85,25 @@ if __name__ == "__main__":
     elif args.rm:
         action_rm(storage, args.exec)
     else:
-        # Compute study_name
-        study_name = args.study or generate_name()
+        # Compute study_name and exec_name by removing all unnecessary extensions and parent dirs
+        study_name = Path(args.study).name.replace(".yaml", "") or generate_name()
+        exec_name = Path(args.exec).stem
 
         # Check execution parameters
         if args.n_minutes is None and args.n_trials is None:
             args.n_trials = 1
 
         # Create config file if it is not worker
-        config_name = f".stune/config/{args.exec}_{study_name}.cfg"
+        config_name = f".stune/config/{exec_name}_{study_name}.cfg"
         if args.n_jobs != WORKER_ID:
-            config = load_config(args.execm, args.study, args.config)
+            # Uses the raw args as they may contain the path to the files
+            config = load_config(args.exec, args.study, args.config)
             OmegaConf.save(config, config_name)
 
         try:
             run(
                 env,
-                exec_name=args.exec,
+                exec_name=exec_name,
                 config_name=config_name,
                 study_name=study_name,
                 storage=storage,

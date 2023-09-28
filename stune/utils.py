@@ -1,8 +1,16 @@
 from typing import Any, Optional, List
-import re
+from pathlib import Path
 
 import omegaconf
 from omegaconf import OmegaConf
+
+
+def get_storage(args, env):
+    storage = args.storage if args.storage else None
+    if args.debug is False and storage is None:
+        storage = f"postgresql://{env['PSQL_USR']}:{env['PSQL_PWD']}@{env['PSQL_HOST']}"
+
+    return storage
 
 
 def load_config(
@@ -10,16 +18,25 @@ def load_config(
         study: Optional[str] = None,
         config: Optional[str] = None
     ):
+    def ensure_extension(path, extension, only_suffix: bool = True):
+        if not str(path).endswith(extension):
+            if only_suffix is True:
+                return Path(path).with_suffix(extension)
+            else:
+                return Path(str(path) + extension)
+        else:
+            return path
+
     # Load exec configuration
     try:
-        exec_config = OmegaConf.load(exec + ".yaml")
+        exec_config = OmegaConf.load(ensure_extension(exec, ".yaml"))
     except FileNotFoundError:
         exec_config = OmegaConf.create()
 
     # Load study configuration
     if study:
         try:
-            study_config = OmegaConf.load(study + ".yaml")
+            study_config = OmegaConf.load(ensure_extension(study, ".yaml", False))
         except FileNotFoundError:
             study_config = OmegaConf.create()
     else:
@@ -27,7 +44,7 @@ def load_config(
 
     # Load manual configuration
     if config:
-        manual_config = OmegaConf.load(config.replace(".yaml", "") + ".yaml")
+        manual_config = OmegaConf.load(ensure_extension(config, ".yaml", False))
     else:
         manual_config = OmegaConf.create()
 
