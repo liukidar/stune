@@ -28,7 +28,7 @@ def sbatch_execute(cmd, ld_library_path):
     sbatch_cmd += f"#SBATCH --time=1:00:00\n"
     sbatch_cmd += f"#SBATCH --gres=gpu:{1}\n"
     sbatch_cmd += f"#SBATCH --partition=devel\n"
-    sbatch_cmd += f"#SBATCH --output ./.out\n"
+    sbatch_cmd += f"#SBATCH --output ./.stuneconfig.out\n"
 
     sbatch_cmd += "module purge\n"
 
@@ -50,9 +50,9 @@ def sbatch_execute(cmd, ld_library_path):
 
     os.system(f"rm {sbatch_filename}")
 
-    with open(".out", "r") as f:
+    with open(".stuneconfig.out", "r") as f:
         output = f.read()
-    os.remove(".out")
+    os.remove(".stuneconfig.out")
 
     return output
 
@@ -222,7 +222,8 @@ if __name__ == "__main__":
     if args.fix:
         env["LD_LIBRARY_PATH"] = check_jax_installation(env)
     else:
-        env["LD_LIBRARY_PATH"] = None
+        # This is necessary until https://github.com/google/jax/issues/17497 is solved
+        env["LD_LIBRARY_PATH"] = ""
 
     with open(config_filename, "w") as f:
         json.dump(env, f, indent=4)
