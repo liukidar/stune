@@ -37,9 +37,9 @@ def objective(
             sweep_id=study_name,
             level_tag="trial-level"
         ) as log:
-            run_info = RunInfo(study_name, params, log, trial)
+            run_info = RunInfo(params, study_name, log, trial)
     else:
-        run_info = RunInfo(study_name, params, None, trial)
+        run_info = RunInfo(params, study_name, None, trial)
 
     return exec.main(run_info)
 
