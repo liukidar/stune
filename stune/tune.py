@@ -68,7 +68,7 @@ def run(
     }
 
     study = optuna.create_study(
-        study_name=f"{exec_name}_{study_name}",
+        study_name=f"{exec_name}.{study_name}",
         storage=storage,
         load_if_exists=True,
         directions=config.directions.values(),
@@ -87,7 +87,7 @@ def run(
         study.optimize(
             functools.partial(
                 objective,
-                study_name=f"{exec_name}_{study_name}",
+                study_name=f"{exec_name}.{study_name}",
                 exec=exec,
                 params=config,
                 log_mode=log_mode,
@@ -127,7 +127,7 @@ def run(
                 cpus_per_task=cpus_per_task,
                 time_hours=n_mins // 60,
                 time_minutes=n_mins % 60,
-                job_name=f"{exec_name}_{study_name}", 
+                job_name=f"{exec_name}.{study_name}", 
                 gpus=requested_gpus,
                 partition=partition if debug is False else 'devel',
                 env=env["CONDA_ENV"],
@@ -141,9 +141,9 @@ def run(
                 exec_name,
                 description=description,
                 mode="async",
-                sweep_id=f"{exec_name}_{study_name}",
+                sweep_id=f"{exec_name}.{study_name}",
                 level_tag="study-level",
-                custom_run_id=f"{exec_name}_{study_name}",
+                custom_run_id=f"{exec_name}.{study_name}",
             ) as log_study:
                 optuna_utils.log_study_metadata(
                     study,

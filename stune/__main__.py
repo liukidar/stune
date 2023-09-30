@@ -86,15 +86,15 @@ if __name__ == "__main__":
         action_rm(storage, args.exec)
     else:
         # Compute study_name and exec_name by removing all unnecessary extensions and parent dirs
-        study_name = Path(args.study).name.replace(".yaml", "") or generate_name()
         exec_name = Path(args.exec).stem
+        study_name = Path(args.study).name.replace(".yaml", "") or generate_name()
 
         # Check execution parameters
         if args.n_minutes is None and args.n_trials is None:
             args.n_trials = 1
 
         # Create config file if it is not worker
-        config_name = f".stune/config/{exec_name}_{study_name}.cfg"
+        config_name = f".stune/config/{exec_name}.{study_name}.cfg"
         if args.n_jobs != WORKER_ID:
             # Uses the raw args as they may contain the path to the files
             config = load_config(args.exec, args.study, args.config)
