@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # Parse cmd line arguments
     parser = argparse.ArgumentParser(description="Slurm parallel hyperparameter optimization via optuna and neptune.")
     parser.add_argument("exec", nargs="?", type=str, help="Target python executable")
-    parser.add_argument("--storage", type=str, help="URL of the storage used to save the study")
+    parser.add_argument("--storage", type=str, help="URL of the storage used to save the study (if not specified, uses the configured psql server)")
     parser.add_argument("-s", "--study", type=str, help="Name of the study to create (or load if it already exists)")
     parser.add_argument("-t", "--n_trials", type=int, help="Number of trials to run the optimization for (exclusive with n_minutes)")
     parser.add_argument("-m", "--n_minutes", type=int, help="Number of minutes to run the optimization for (exclusive with n_trials)")
