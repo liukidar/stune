@@ -85,7 +85,7 @@ We also need to edit the file `target/psql/installation/path/data/postgresql.con
 Save everything and restart the psql server by running
 ```bash
 # DEFAULT:
-# CONDA_PREFIX/psql/bin/pg_ctl -D $CONDA_PREFIX/psql/data restart
+# $CONDA_PREFIX/psql/bin/pg_ctl -D $CONDA_PREFIX/psql/data restart
 target/psql/installation/path/bin/pg_ctl -D target/psql/installation/path/data restart
 ```
 
