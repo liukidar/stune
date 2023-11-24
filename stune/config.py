@@ -9,7 +9,7 @@ from pathlib import Path
 def get_env(env, key, show_old = False):
     value = input(f"{key}" + (f" ({env[key]})" if show_old and key in env else "") +": ")
 
-    if value != "":
+    if (value != "") or (key not in env):
         env[key] = value
 
 
@@ -181,10 +181,7 @@ def check_jax_installation(env):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Set credentials used by stune")
-    parser.add_argument("-u", "--user", action="store_true", help="Ask database user credentials")
-    parser.add_argument("-d", "--database", action="store_true", help="Ask database host")
-    parser.add_argument("-n", "--neptune", action="store_true", help="Ask neptune.ai credentials")
-
+    parser.add_argument("--neptune", action="store_true", help="Ask and save neptune.ai credentials.")
     parser.add_argument("--fix", action="store_true", help="Perform check of fix of the JAX installation.")
     parser.add_argument("--cc_url", type=str, help="Direct url from which to download the cuda compatibility package if necessary.")
 
@@ -202,23 +199,25 @@ if __name__ == "__main__":
         pass
 
     config_filename = ".stune/config.json"
-    new_config = False
     try:
         with open(config_filename, "r") as f:
             env = json.load(f)
     except FileNotFoundError:
-        env = {}
-        new_config = True
+        # Default values
+        env = {
+            "STUNE_STORAGE": "redis",
+            "GPU_MEM_RESERVED": "0.1"
+        }
 
-    if args.user or new_config:
-        get_env(env, "PSQL_USR", True)
-        get_env(env, "PSQL_PWD")
-    if args.database or new_config:
-        get_env(env, "PSQL_HOST", True)
-    if args.neptune or new_config:
+    get_env(env, "STUNE_USR", True)
+    get_env(env, "STUNE_PWD")
+    get_env(env, "STUNE_HOST", True)
+    get_env(env, "GPU_MEM_RESERVED", True)
+
+    if args.neptune:
         get_env(env, "NEPTUNE_PROJECT", True)
         get_env(env, "NEPTUNE_API_TOKEN", False)
-    
+
     if args.fix:
         env["LD_LIBRARY_PATH"] = check_jax_installation(env)
     else:
