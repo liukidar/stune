@@ -1,6 +1,7 @@
 from typing import Optional, List
 import os
 import subprocess
+import random
 
 class Sbatch:
     def __init__(
@@ -18,9 +19,6 @@ class Sbatch:
         ld_library_path: str = "",
         resources: Optional[List[str]] = None
     ):
-        sbatch_filename = f"__sbatch_{job_name}.sh"
-        self.sbatch_filename = sbatch_filename
-
         sbatch_cmd = "#!/bin/bash -l\n"
         sbatch_cmd += f"#SBATCH --nodes=1\n"
         sbatch_cmd += f"#SBATCH --tasks-per-node={tasks_per_node}\n"
@@ -60,13 +58,20 @@ class Sbatch:
 
         sbatch_cmd += cmd + "\n"
 
+        self.job_name = job_name
+        self.sbatch_cmd = sbatch_cmd
+    
+    def submit(self, n_jobs: int = 1):
+        sbatch_filename = f"__sbatch_{self.job_name}_{random.randint(1, 1204)}.sh"
         with open(".stune/" + sbatch_filename, "w") as f:
-            f.write(sbatch_cmd)
-        os.system(f"chmod +x .stune/{self.sbatch_filename}")
+            f.write(self.sbatch_cmd)
+        os.system(f"chmod +x .stune/{sbatch_filename}")
 
-    
-    def __del__(self):
-        os.system(f"rm .stune/{self.sbatch_filename}")
-    
-    def submit(self):
-        return subprocess.Popen(["sbatch", "--wait", f".stune/{self.sbatch_filename}"])
+        # Temporary fix for SLURM bug (see: https://bugs.schedmd.com/show_bug.cgi?id=14298)
+        os.environ.pop("SLURM_CPU_BIND", None)
+
+        r = subprocess.run(["sbatch", f"--array=1-{n_jobs}", f".stune/{sbatch_filename}"])
+        
+        os.system(f"rm .stune/{sbatch_filename}")
+
+        return r
