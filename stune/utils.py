@@ -1,5 +1,6 @@
 from typing import Any, Optional, List
 from pathlib import Path
+import datetime
 
 import optuna
 import omegaconf
@@ -32,12 +33,18 @@ class Storage:
     def cmd_str(self):
         return f" --storage {self.url} "
     
-    def clear_running_trials(self, study_name):
-        study = optuna.study.load_study(study_name=study_name, storage=self.get())
-        zombie_runs = study.get_trials(deepcopy=False, states=[optuna.trial.TrialState.RUNNING])
+    def clear_stale_trials(self, study_name, timeeout_minutes=60):
+        try:
+            study = optuna.study.load_study(study_name=study_name, storage=self.get())
+            active_runs = study.get_trials(deepcopy=False, states=[optuna.trial.TrialState.RUNNING])
 
-        for run in zombie_runs:
-            study._storage.set_trial_state_values(run._trial_id, optuna.trial.TrialState.WAITING)
+            time_now = datetime.datetime.now()
+
+            for run in active_runs:
+                if (time_now - run.datetime_start).seconds > timeeout_minutes * 60:
+                    study._storage.set_trial_state_values(run._trial_id, optuna.trial.TrialState.WAITING)
+        except KeyError:
+            pass
     
     def _make_storage(self):
         if self.url is None:
@@ -185,7 +192,7 @@ class RunInfo:
     def __init__(self,
         config: OmegaConf,
         study_name: str = None,
-        trial = None,
+        trial: Optional[optuna.Trial] = None,
         log = None
     ) -> None:
         self.config = config
