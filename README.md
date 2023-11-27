@@ -28,6 +28,8 @@ cd ../
 rm -f -r redis-stable*
 ```
 And... done!
+Finally, let's create a folder we will use to store temporary stune data, such as the database generated with redis.
+```
 
 (We also need to install the pyhton redis package, so make sure to run `pip install "redis[hiredis]"` in your preferred environment)
 
@@ -74,6 +76,7 @@ exit
 ```
 
 To close the server use `CTRL+C` in the server's terminal.
+
 
 ### Installation and configuration: PSQL
 In order to use stune, you will need a working postgreSQL server accessible by compute nodes.
