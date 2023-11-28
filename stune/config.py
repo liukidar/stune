@@ -99,7 +99,7 @@ def check_jax_installation(env):
     
     # Check if cuda and driver versions are compatible
     elif ("use the NVIDIA-provided CUDA forward compatibility packages" in jax_output):
-        c = input("\n\n[ERROR] stune detected that an old driver version is installed on the system. Do you want to attempt to fix the isse? \n\n"
+        c = input("\n\n[ERROR] stune detected that an old driver version is installed on the system. Do you want to attempt to fix the issue? \n\n"
                 f"(This will install cuda compatibility drivers in the active conda environment, NO GLOBAL CHANGES will be made)\n\n? [y/n] ")
 
         if c in ["y", "Y"]:
