@@ -1,6 +1,7 @@
 import os
 import math
 import subprocess
+import random
 
 from .study import Storage, Study
 from .slurm import Sbatch
@@ -15,6 +16,26 @@ class Tuner:
         self.gpus = config.get("gpus", "").split(",")
         self.n_tasks = config.get("n_tasks", -1)
         self.gpus_per_task = config.get("gpus_per_task", 0)
+
+        self.timeout = config.get("timeout", None)
+        try:
+            if ":" in self.timeout:
+                self.timeout, self.timeout_per_worker = map(float, self.timeout.split(":"))
+            else:
+                self.timeout = float(self.timeout)
+            self.timeout_per_worker = self.timeout
+        except TypeError:
+            self.timeout_per_worker = self.timeout
+
+        self.n_trials = config.get("n_trials", None)
+        try:
+            if ":" in self.n_trials:
+                self.n_trials, self.n_trials_per_worker = map(int, self.n_trials.split(":"))
+            else:
+                self.n_trials = int(self.n_trials)
+                self.n_trials_per_worker = self.n_trials
+        except TypeError:
+            self.n_trials_per_worker = self.n_trials
 
     @staticmethod
     def from_config(config):
@@ -31,9 +52,21 @@ class Tuner:
         if "gpus" in study.config:
             os.environ["CUDA_VISIBLE_DEVICES"] = study.config["gpus"]
         os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-        _done = study.optimize(storage)
 
+        _done = study.optimize(storage, n_trials=self.n_trials_per_worker, timeout=self.timeout_per_worker)
+
+        print("DONE!", _done, self.n_trials)
         if _done is False:
+            if self.n_trials is not None:
+                self.n_trials -= self.n_trials_per_worker
+
+                if self.n_trials <= 0:
+                    return
+            if self.timeout is not None:
+                self.timeout -= self.timeout_per_worker
+
+                if self.timeout <= 0:
+                    return
             self.schedule(study, storage, n=1)
 
     def schedule(self, study: Study, storage: Storage):
@@ -47,7 +80,17 @@ class SSHTuner(Tuner):
 
         if n == -1:
             n = int(len(self.gpus) / self.gpus_per_task) if self.gpus_per_task else 1
-        print(f"Running {n} tasks", len(self.gpus), self.gpus_per_task)
+
+        if self.timeout is not None:
+            cmd_timeout = f"--timeout {self.timeout}:{self.timeout_per_worker}"
+        else:
+            cmd_timeout = ""
+
+        if self.n_trials is not None:
+            cmd_trials = f"--n_trials {self.n_trials}:{self.n_trials_per_worker}"
+        else:
+            cmd_trials = ""
+
         processes = []
         for i in range(n):
             gpus = tuple(map(
@@ -56,11 +99,12 @@ class SSHTuner(Tuner):
             ))
             cmd_gpus = f"--gpus={','.join(gpus)}" if len(gpus) else ""
             current_datetime = datetime.datetime.now()
-            datetime_string = current_datetime.strftime("%Y%m%d:%H%M")
+            datetime_string = current_datetime.strftime("%m%d:%H%M")
             cmd = (
                 f"python -m stune \
                 --from_config '.stune/configs/{study.name}.cfg' \
-                {cmd_gpus} > .stune/output/{study.id(storage)}-{study.name}-{datetime_string}-{i}.out 2>&1"
+                {cmd_gpus} {cmd_timeout} {cmd_trials} \
+                > .stune/output/{study.id(storage)}-{study.name}-{datetime_string}-{random.randint(0, 9999)}.out 2>&1"
             )
             process = subprocess.Popen(cmd, shell=True)
             processes.append(process)

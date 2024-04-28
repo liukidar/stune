@@ -103,7 +103,7 @@ class Study:
 
         return self._study
 
-    def optimize(self, storage: Storage) -> bool:
+    def optimize(self, storage: Storage, n_trials: int | None = None, timeout: float | None = None) -> bool:
         def worker(
             trial: Any,
             study: optuna.Study,
@@ -125,7 +125,8 @@ class Study:
                 exe=_exe,
                 config=self.config
             ),
-            n_trials=self.config.get("n_trials", 1),
+            n_trials=n_trials,
+            timeout=timeout * 60 if timeout is not None else None,
             n_jobs=1,  # we use process parallelism and not thread parallelism
             callbacks=[_counterCallback],
             gc_after_trial=self.config.get("gc_after_trial", True)
@@ -134,7 +135,7 @@ class Study:
 
         # Return if the study is completed
         return not (
-            _counterCallback.n_trials_completed == self.config.get("n_trials", 1)
+            _counterCallback.n_trials_completed == n_trials
             or _counterCallback.n_trials_failed != 0
         )
 
@@ -153,4 +154,5 @@ class Study:
             storage=storage.get(),
             load_if_exists=self.config.get("load_if_exists", True),
             sampler=samplers[_sampler](),
+            direction=self.config.get("direction", "minimize"),
         )

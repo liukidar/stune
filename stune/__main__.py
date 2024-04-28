@@ -86,7 +86,16 @@ if __name__ == "__main__":
     parser.add_argument("--storage", type=str, help="URL of the storage host")
     parser.add_argument("--n_tasks", type=int, help="Number of tasks that are scheduled to be executed."
                         "By default enough tasks are scheduled to fill up available resources")
-    parser.add_argument("--n_trials", type=int, help="Number of trials to run the optimization for")
+    parser.add_argument(
+        "--n_trials",
+        type=str,
+        help="Number of trials to run the optimization for (exclusive with 'timeout')"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=str,
+        help="Number of minutes to run the optimization for (exclusive with 'n_trials')"
+    )
     parser.add_argument("--sampler", type=str, help="Sampler used by optuna: tpe(None)|random|grid")
     parser.add_argument("--txt", type=str, help="Study description")
 
@@ -157,11 +166,11 @@ if __name__ == "__main__":
     storage = Storage.from_config(config)
 
     if config.ls:
-        action_ls(storage, config.exe)
+        action_ls(storage, config.get("exe", None))
     elif config.rm:
-        action_rm(storage, config.exe)
+        action_rm(storage, config.get("exe", None))
     elif config.info:
-        action_info(storage, config.exe)
+        action_info(storage, config.get("exe", None))
     else:
         study = Study.from_config(config)
         tuner = Tuner.from_config(config)
