@@ -78,7 +78,7 @@ exit
 To close the server use `CTRL+C` in the server's terminal.
 
 
-### Installation and configuration: PSQL
+### Installation and configuration: PSQL (deprecated)
 In order to use stune, you will need a working postgreSQL server accessible by compute nodes.
 
 #### LOCAL USER
@@ -171,6 +171,12 @@ target/psql/installation/path/bin/psql -U your-username -h hostname
 NOTE: the server was started from login node `dgk227`, which thus becomes is the database hostname. I suggest starting psql from a screen so that you can keep it alive and always find which node is using (remember that if you followed the default configuration, PostreSQL is bound to to your CONDA environment, so you must activate it to launch the service).
 If after inserting your password you are in, we are done (with PostgreSQL)!
 
-Now you can configure stune. Please run `python -m stune.config` in the current project directory to initialize it. You can pass the parameter `--fix` to validate and fix your JAX installation (only works if using a conda environment). Use your-username your-password and hostname (if by any reasons your psql server is shutdown and is restarted on a different node, you will have to reconfigure stune by updating the hostname to match the new one: check `python -m stune.config --help`).
 
-NOTE: At the moment stune does not support neptune.ai, so no need to configure it (simply leave the configuration fields blank).
+### Stune installation and configuration
+
+Clone this repository from GitHub, (select the right branch), and install via pip:
+```
+pip install -e /path/to/this/repo/ --config-settings editable_mode=strict
+```
+
+Stune needs to be configured in each project's root directory you intend to use stune with. Please run `python -m stune.config` in the current project directory to initialize it. To configure `redis` as default storage system, use `redis` as `STUNE_STORAGE`, ` ` as `STUNE_USR`, `xxxx` as `STUNE_PWD`, and `host_name:host_port` as `STUNE_HOST`, where `host_name` is the address or name of the node running the server (could be `0.0.0.0` if it is on the local machine) and `host_port` is the port the server is listening to (e.g., the default `6379 `). These default values are used to compute the default storage address for `stune` in case no storage url is passed via the `--storage` command line argument. The url is computed as `url = $STUNE_STORAGE://$STUNE_USR:$STUNE_PWD@$STUNE_HOST`.

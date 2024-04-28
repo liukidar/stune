@@ -7,185 +7,23 @@ import omegaconf
 from omegaconf import OmegaConf
 
 
-class Storage:
-    def __init__(self, url) -> None:
-        self.url = url
-        self.storage = None
-    
-    @staticmethod
-    def init(args, env):
-        url = args.storage
-        if args.debug:
-            url = None
-        else:
-            url = args.storage
-            if url is None:
-                url = f"{env['STUNE_STORAGE']}://{env['STUNE_USR']}:{env['STUNE_PWD']}@{env['STUNE_HOST']}"
-
-        return Storage(url)
-    
-    def get(self):
-        if self.storage is None:
-            self.storage = self._make_storage()
-        
-        return self.storage
-    
-    def cmd_str(self):
-        return f" --storage {self.url} "
-    
-    def clear_stale_trials(self, study_name, timeeout_minutes=60):
-        try:
-            study = optuna.study.load_study(study_name=study_name, storage=self.get())
-            active_runs = study.get_trials(deepcopy=False, states=[optuna.trial.TrialState.RUNNING])
-
-            time_now = datetime.datetime.now()
-
-            for run in active_runs:
-                if (time_now - run.datetime_start).seconds > timeeout_minutes * 60:
-                    study._storage.set_trial_state_values(run._trial_id, optuna.trial.TrialState.WAITING)
-        except KeyError:
-            pass
-    
-    def _make_storage(self):
-        if self.url is None:
-            return optuna.storages.InMemoryStorage()
-        elif self.url.startswith("redis://"):
-            return optuna.storages.JournalStorage(optuna.storages.JournalRedisStorage(url=self.url))
-        elif self.url.startswith("postgresql://"):
-            return optuna.storages.RDBStorage(url=self.url, heartbeat_interval=60, grace_period=120)
-        else:
-            raise NotImplementedError(f"Storage {self.url} is not supported")
-
-
 def load_config(
-        exec: str,
-        study: Optional[str] = None,
-        config: Optional[str] = None
+        config: str | None = None
     ):
-    def ensure_extension(path, extension, only_suffix: bool = True):
-        if not str(path).endswith(extension):
-            if only_suffix is True:
-                return Path(path).with_suffix(extension)
-            else:
-                return Path(str(path) + extension)
-        else:
-            return path
+    if config is None:
+        return OmegaConf.create()
+
+    extension = ".yaml"
+    if not str(config).endswith(extension):
+        config += extension        
 
     # Load exec configuration
     try:
-        exec_config = OmegaConf.load(ensure_extension(exec, ".yaml"))
+        config = OmegaConf.load(config)
     except FileNotFoundError:
-        exec_config = OmegaConf.create()
-
-    # Load study configuration
-    if study:
-        try:
-            study_config = OmegaConf.load(ensure_extension(study, ".yaml", False))
-        except FileNotFoundError:
-            study_config = OmegaConf.create()
-    else:
-        study = study_config = OmegaConf.create()
-
-    # Load manual configuration
-    if config:
-        manual_config = OmegaConf.load(ensure_extension(config, ".yaml", False))
-    else:
-        manual_config = OmegaConf.create()
-
-    config = OmegaConf.unsafe_merge(
-        exec_config,
-        study_config,
-        manual_config
-    )
+        config = OmegaConf.create()
 
     return config
-
-
-class Study:
-    _study: optuna.Study = None
-
-    def __init__(
-        self,
-        exec_name: str,
-        study_name: str,
-        sampler: str,
-        partition: Optional[str] = None,
-        n_jobs: Optional[int] = None,
-        n_trials: int = 1,
-        trials_per_worker: Optional[int] = None,
-        load_if_exists: bool = True,
-    ):
-        self.exec_name = exec_name
-        self.study_name = study_name
-        self.sampler = sampler
-        self.partition = partition
-        self.n_jobs = n_jobs
-        self.n_trials = n_trials
-        self.trials_per_worker = trials_per_worker
-        self.load_if_exists = load_if_exists
-
-    @staticmethod
-    def init(args, exec_name: str, study_name: Optional[str] = None, load_if_exists: bool = True):
-        if ":" in args.n_trials:
-            n_trials, trials_per_worker = args.n_trials.split(":")
-        else:
-            n_trials = args.n_trials
-            trials_per_worker = None
-
-        return Study(
-            exec_name=exec_name,
-            study_name=study_name or args.study,
-            sampler=args.sampler,
-            partition=args.partition,
-            n_jobs=args.n_jobs,
-            n_trials=int(n_trials),
-            trials_per_worker=int(trials_per_worker),
-            load_if_exists=load_if_exists
-        )
-    
-    def get(self, storage: Storage) -> optuna.Study:
-        if self._study is None:
-            self._study = self._make_study(storage)
-        
-        return self._study
-    
-    @property
-    def name(self):
-        return f"{self.exec_name}.{self.study_name}"
-    
-    def cmd_str(self):
-        cmd = f" --study {self.study_name} "
-        if self.sampler is not None:
-            cmd += f"--sampler {self.sampler} "
-        if self.partition is not None:
-            cmd += f"--partition {self.partition} "
-        if self.n_jobs is not None:
-            cmd += f"--n_jobs -1 "
-        if self.n_trials is not None:
-            cmd += f"--n_trials {self.n_trials}:{self.trials_per_worker} " # TODO
-        
-        return cmd
-
-    def is_worker(self):
-        return self.n_jobs == -1
-
-    def _make_study(self, storage: Storage):
-        samplers = {
-            None: lambda: None,
-            "random": optuna.samplers.RandomSampler,
-            "grid": optuna.samplers.BruteForceSampler
-        }
-
-        if self.sampler not in samplers:
-            raise NotImplementedError(f"Sampler {self.sampler} is not supported")
-        sampler = samplers[self.sampler]()
-
-        return optuna.create_study(
-            study_name=self.name,
-            storage=storage.get(),
-            load_if_exists=self.load_if_exists,
-            sampler=sampler
-        )
 
 
 class RunInfo:

@@ -3,13 +3,13 @@ import os
 import subprocess
 import random
 
+
 class Sbatch:
     def __init__(
         self,
         cmd: str,
         tasks_per_node: int = 1,
         cpus_per_task: int = 1,
-        gpu_reserved_memory : float = 0.1,
         time_minutes: int = 60,
         job_name: str = "lxp14",
         gpus: Optional[int] = None,
@@ -20,7 +20,7 @@ class Sbatch:
         resources: Optional[List[str]] = None
     ):
         sbatch_cmd = "#!/bin/bash -l\n"
-        sbatch_cmd += f"#SBATCH --nodes=1\n"
+        sbatch_cmd += "#SBATCH --nodes=1\n"
         sbatch_cmd += f"#SBATCH --tasks-per-node={tasks_per_node}\n"
         sbatch_cmd += f"#SBATCH --cpus-per-task={cpus_per_task}\n"
         sbatch_cmd += f"#SBATCH --time={time_minutes // 60}:{time_minutes % 60}:00\n"
@@ -42,11 +42,7 @@ class Sbatch:
         # LD_LIBRARY_PATH should include the cuda compability fix
         sbatch_cmd += f"export LD_LIBRARY_PATH=\"{ld_library_path}\"\n"
 
-        # Set gpu memory fraction per task
-        sbatch_cmd += f"export XLA_PYTHON_CLIENT_PREALLOCATE=true\n"
-        sbatch_cmd += f"export XLA_PYTHON_CLIENT_MEM_FRACTION=\".{int(100 * (1.0 - gpu_reserved_memory*tasks_per_node) / tasks_per_node)}\"\n"
-
-        # Copy over required dataset (TODO: should be changed to a set of requests made via the config file)
+        # Copy over required dataset
         if resources is not None:
             for resource in resources:
                 sbatch_cmd += f"rsync -a $HOME/{resource} $TMPDIR\n"
@@ -60,9 +56,9 @@ class Sbatch:
 
         self.job_name = job_name
         self.sbatch_cmd = sbatch_cmd
-    
+
     def submit(self, n_jobs: int = 1):
-        sbatch_filename = f"__sbatch_{self.job_name}_{random.randint(1, 1204)}.sh"
+        sbatch_filename = f"__sbatch_{self.job_name}_{random.randint(1, 9999)}.sh"
         with open(".stune/" + sbatch_filename, "w") as f:
             f.write(self.sbatch_cmd)
         os.system(f"chmod +x .stune/{sbatch_filename}")
@@ -71,7 +67,7 @@ class Sbatch:
         os.environ.pop("SLURM_CPU_BIND", None)
 
         r = subprocess.run(["sbatch", f"--array=1-{n_jobs}", f".stune/{sbatch_filename}"])
-        
+
         os.system(f"rm .stune/{sbatch_filename}")
 
         return r
