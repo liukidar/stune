@@ -55,7 +55,6 @@ class Tuner:
 
         _done = study.optimize(storage, n_trials=self.n_trials_per_worker, timeout=self.timeout_per_worker)
 
-        print("DONE!", _done, self.n_trials)
         if _done is False:
             if self.n_trials is not None:
                 self.n_trials -= self.n_trials_per_worker
