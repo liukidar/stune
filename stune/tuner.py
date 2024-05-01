@@ -117,7 +117,6 @@ class SLURMTuner(Tuner):
         super().__init__(config)
 
         self.partition = config["partition"]
-        self.time = config["time"]
         self.conda_env = config["CONDA_ENV"]
         self.n_jobs = config.get("n_jobs", 1)
         self.cpus_per_task = config.get("cpus_per_task", 1)
@@ -140,7 +139,7 @@ class SLURMTuner(Tuner):
             cmd,
             tasks_per_job,
             self.cpus_per_task,
-            self.time,
+            self.timeout_per_worker or 60,
             study.name,
             gpus_per_job,
             self.partition,

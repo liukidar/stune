@@ -89,12 +89,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--n_trials",
         type=str,
-        help="Number of trials to run the optimization for (exclusive with 'timeout')"
+        help="Number of trials to run the optimization for (exclusive with 'timeout')."
+             "Format: 'n_trials:n_trials_per_worker'."
     )
     parser.add_argument(
         "--timeout",
         type=str,
         help="Number of minutes to run the optimization for (exclusive with 'n_trials')"
+             "Format: 'timeout:timeout_per_worker'."
     )
     parser.add_argument("--sampler", type=str, help="Sampler used by optuna: tpe(None)|random|grid")
     parser.add_argument("--txt", type=str, help="Study description")
@@ -107,27 +109,27 @@ if __name__ == "__main__":
     )
 
     # SBATCH exclusive arguments
-    parser.add_argument("--n_jobs", type=int, help="Number of jobs that are scheduled to be executed")
-    parser.add_argument("--partition", type=str, help="SLURM Partition to target when scheduling jobs")
+    parser.add_argument("--n_jobs", type=int, help="[SLURM] Number of jobs that are scheduled to be executed")
+    parser.add_argument("--partition", type=str, help="[SLURM] SLURM Partition to target when scheduling jobs")
 
     # SSH exclusive arguments
-    parser.add_argument("--gpus", type=str, help="List of GPUs to use")
+    parser.add_argument("--gpus", type=str, help="[SSH] List of GPUs to use")
 
     # STUNE exclusive arguments
     parser.add_argument(
         "--ls",
         action="store_true",
-        help="List all studies. If exec is specified list only the studies on it."
+        help="List all studies. If exe is specified list only the studies on it."
     )
     parser.add_argument(
         "--rm",
         action="store_true",
-        help="List all studies and ask for deletion. If exec is specified list only the studies on it."
+        help="List all studies and ask for deletion. If exe is specified list only the studies on it."
     )
     parser.add_argument(
         "--info",
         action="store_true",
-        help="List all studies and ask for study to display. If exec is specified list only the studies on it."
+        help="List all studies and ask for study to display. If exe is specified list only the studies on it."
     )
 
     # Load cli configuration
@@ -144,7 +146,7 @@ if __name__ == "__main__":
         is_worker = True
     else:
         # Load experiment configuration
-        experiment_config = load_config(cli_config.get("study"))
+        exe_config = load_config(cli_config.get("exe"))
 
         # Load study configuration
         study_config = load_config(cli_config.get("study"))
@@ -154,11 +156,11 @@ if __name__ == "__main__":
 
         config = OmegaConf.unsafe_merge(
             def_config,
-            experiment_config,
+            config,
+            exe_config,
             study_config,
             custom_config,
             cli_config,
-            config,
         )
 
         is_worker = False

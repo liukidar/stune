@@ -1,0 +1,1 @@
+python -m stune --exe alexnet --study stune_example --gpus 0,1,2,3 --n_trials 128:8 --tuner ssh --sampler grid

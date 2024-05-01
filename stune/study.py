@@ -92,7 +92,7 @@ class Study:
 
     @property
     def name(self):
-        return self.config["study"]
+        return f'{self.config["exe"]}.{self.config["study"]}'
 
     def id(self, storage: Storage):
         return self.get(storage)._study_id
