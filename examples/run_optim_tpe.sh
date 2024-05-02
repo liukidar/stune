@@ -1,0 +1,2 @@
+# Using the tpe sampler to optimize the hyperparameters of the AlexNet model
+python -m stune --exe alexnet --study stune_example_tpe --gpus 0,1,2,3 --n_trials 128:8 --tuner ssh --config alexnet_tpe.yaml
