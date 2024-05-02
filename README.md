@@ -171,3 +171,6 @@ The following options are available:
 - `sample_type: range, sample_space: [int_from, int_to]` (`int_to` is included)
 - `sample_type: float, sample_space: [low, high, step=null, log=False]` (so, for example, `[1e-4, 1e-2, null, True]` or `[0.0, 1.0, 0.1]`)
 If a `default` option is provided, it is used when the config file is used outside the optimisation process (such as if I run the `py_file` directly).
+
+#### NOTES:
+- there seems to be a bug in Optuna, which prevents the grid sampler to resume after a failed run. As a temporary fix, please comment lines 191 and 219 of `optuna/samplers/_brute_force.py`, removing the entry `TrialState.FAIL` from both dictionaries (the line numbers could change in future versions).
