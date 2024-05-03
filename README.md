@@ -174,3 +174,6 @@ If a `default` option is provided, it is used when the config file is used outsi
 
 #### NOTES:
 - there seems to be a bug in Optuna, which prevents the grid sampler to resume after a failed run. As a temporary fix, please comment lines 191 and 219 of `optuna/samplers/_brute_force.py`, removing the entry `TrialState.FAIL` from both dictionaries (the line numbers could change in future versions).
+
+### Optuna dashboard
+It is possible to use the dashboard provided by optuna by installing it via `pip install optuna-dashboard` and running it via `optuna-dashboard 'redis://:xxxx@host_name:host_port'`, substituting in your password for `xxxx` and the address of the redis server (the default would be `0.0.0.0:6379`)
