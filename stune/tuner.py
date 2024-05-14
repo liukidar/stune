@@ -131,8 +131,7 @@ class SLURMTuner(Tuner):
             tasks_per_job = int(gpus_per_job / self.gpus_per_task) if self.gpus_per_task else 1
 
         cmd = (
-            f"python -m stune \
-            --from_config '.stune/configs/{study.name}.cfg'"
+            "python -m stune --from_config '.stune/configs/{study.name}.cfg'"
         )
 
         sbatch = Sbatch(
