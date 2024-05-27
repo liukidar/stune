@@ -177,7 +177,8 @@ if __name__ == "__main__":
         study = Study.from_config(config)
         tuner = Tuner.from_config(config)
         # Create config file if it is not worker
-        config_name = f".stune/configs/{study.name}.cfg"
+        config_name = f".stune/config/{study.name}.cfg"
+        os.makedirs(os.path.dirname(config_name), exist_ok=True)
         if not is_worker:
             OmegaConf.save(config, config_name)
 
