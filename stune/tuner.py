@@ -101,7 +101,7 @@ class SSHTuner(Tuner):
             datetime_string = current_datetime.strftime("%m%d:%H%M")
             cmd = (
                 f"python -m stune \
-                --from_config '.stune/configs/{study.name}.cfg' \
+                --from_config '.stune/config/{study.name}.cfg' \
                 {cmd_gpus} {cmd_timeout} {cmd_trials} \
                 > .stune/output/{study.id(storage)}-{study.name}-{datetime_string}-{random.randint(0, 9999)}.out 2>&1"
             )
@@ -131,7 +131,7 @@ class SLURMTuner(Tuner):
             tasks_per_job = int(gpus_per_job / self.gpus_per_task) if self.gpus_per_task else 1
 
         cmd = (
-            "python -m stune --from_config '.stune/configs/{study.name}.cfg'"
+            "python -m stune --from_config '.stune/config/{study.name}.cfg'"
         )
 
         sbatch = Sbatch(
