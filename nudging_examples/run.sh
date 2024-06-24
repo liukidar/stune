@@ -1,0 +1,1 @@
+python -m stune --exe hp_search --study MLP_CN_MNIST --gpus 0,1,2,3 --n_trials 128:8 --tuner ssh --config yamlfiles/MLP_CN.yaml # The name of the study should follow the format "xxxxx_dataset", where "dataset" should be one of the following: 'MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', or 'TinyImageNet'.
