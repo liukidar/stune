@@ -2,10 +2,10 @@
 Stune is based on Optuna and simplifies its integration with a SLURM cluster.
 In order to use stune on a SLURM cluster, you will need a database server running on a login node that can be accessed by the computed nodes. Stune currently support Redis and PSQL. It is recommended to use Redis as it is easier to install and, accordinly to the Optuna documentation, faster during execution.
 
-## Installation and configuration
+## 1. Installation of storage backend
 We assume you do not have any sudo rights when configuring stune, as this is usally the case when using computing clusters. Thus, we install everything locally and from source. If, instead, you have sudo rights you can probably get aways with a significantly easier installation process. You will still have to go through configuration to allow the chosen database system to work properly with stune. We provide installation tutorials for both Redis and PSQL, but, again, you ONLY NEED ONE. Redis is recommended.
 
-### Redis: installation
+### 1.1 Redis
 Choose your desired installation path. We will be using `~/usr/bin`. Execute the following instructions to install Redis. If any of the steps do not work, please let me know.
 
 ```bash
@@ -78,7 +78,7 @@ exit
 To close the server use `CTRL+C` in the server's terminal.
 
 
-### Installation and configuration: PSQL (this hasn't been tested in a while, so use Redis)
+### 1.2 PSQL (this hasn't been tested in a while, so use Redis)
 In order to use stune, you will need a working postgreSQL server accessible by compute nodes.
 
 #### LOCAL USER
@@ -171,6 +171,7 @@ target/psql/installation/path/bin/psql -U your-username -h hostname
 NOTE: the server was started from login node `dgk227`, which thus becomes is the database hostname. I suggest starting psql from a screen so that you can keep it alive and always find which node is using (remember that if you followed the default configuration, PostreSQL is bound to to your CONDA environment, so you must activate it to launch the service).
 If after inserting your password you are in, we are done (with PostgreSQL)!
 
-Now you can configure stune. Please run `python -m stune.config` in the current project directory to initialize it. You can pass the parameter `--fix` to validate and fix your JAX installation (only works if using a conda environment). Use your-username your-password and hostname (if by any reasons your psql server is shutdown and is restarted on a different node, you will have to reconfigure stune by updating the hostname to match the new one: check `python -m stune.config --help`).
+## 2. Configure Stune
+Now you can configure stune. Please run `python -m stune.config` in the current project directory to initialize it. You can pass the parameter `--fix` to validate and fix your JAX installation (only works if using a conda environment). Use your-username your-password and hostname (if by any reasons your storage backend server is shutdown and is restarted on a different node, you will have to reconfigure stune by updating the hostname to match the new one: check `python -m stune.config --help`).
 
 NOTE: At the moment stune does not support neptune.ai, so no need to configure it (simply leave the configuration fields blank).
