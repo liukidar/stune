@@ -78,7 +78,7 @@ exit
 To close the server use `CTRL+C` in the server's terminal.
 
 
-### Installation and configuration: PSQL
+### Installation and configuration: PSQL (this hasn't been tested in a while, so use Redis)
 In order to use stune, you will need a working postgreSQL server accessible by compute nodes.
 
 #### LOCAL USER
